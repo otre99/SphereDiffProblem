@@ -16,51 +16,11 @@ def calc_grid_coords(nlats:int, nlons:int, return_grid=False, geo_latlon=False):
         lons[ lons < 0.0 ] += 360.0
     return lats, lons 
 
-
-def calc_grid_coords_uv(nlats:int, nlons:int, return_grid=False):
-    """    
-    Parameters
-    ----------
-    nlats : int
-        DESCRIPTION.
-    nlons : int
-        DESCRIPTION.
-    return_grid : TYPE, optional
-        DESCRIPTION. The default is False.
-
-    Returns
-    -------
-    ulats : TYPE
-        DESCRIPTION.
-    ulons : TYPE
-        DESCRIPTION.
-    vlats : TYPE
-        DESCRIPTION.
-    vlons : TYPE
-        DESCRIPTION.
-    """
-    dlon = 2*pi/nlons
-    dlat = pi/(nlats+1)   
-    ulats = np.linspace(dlat, pi-dlat, nlats)
-    ulons = np.linspace(0.0, 2*pi-dlon, nlons)    
-    
-    vlats = np.linspace(0.5*dlat, pi-0.5*dlat, nlats+1)
-    vlons = np.linspace(0.5*dlon, 2*pi-0.5*dlon, nlons)    
-    
-    if return_grid:
-        ulons, ulats = np.meshgrid(ulons, ulats)
-        vlons, vlats = np.meshgrid(vlons, vlats)
-
-    return ulats, ulons, vlats, vlons 
-
-
-
 def calc_cell_area(lat, dlat, dlon, a=1.0):
     return np.sin(lat)*dlat*dlon*a**2
 
 def calc_pole_area(dlat, a):
     return (dlat**2)*(a**2)*pi/4
-
 
 def calc_mayavi_mesh(n_sol, sol, s_sol, a):
     lats, lons = calc_grid_coords(nlats=sol.shape[0], nlons=sol.shape[1], return_grid=False)
@@ -83,13 +43,12 @@ def latlon_to_xyz(lats, lons, a):
     z = a*np.cos(lats)
     return x,  y,  z    
 
-
 def cell_average(clat, clon, a, dlat, dlon, funct):
     from scipy.integrate import dblquad
     f = lambda lat, lon: a**2*funct(lat, lon)
     
     lat1, lat2 = clat-dlat, clat+dlat
-    lan1, lan2 = clon-dlon, clon+dlon
+    clon1, clon2 = clon-dlon, clon+dlon
     
     r = dblquad(func=f, a=lat1, b=lat2, gfun=lambda x: clon1, hfun=lambda x: clon2)
     return r
@@ -99,7 +58,7 @@ def np_cell_average(a, dlat, dlon, funct):
     f = lambda lat, lon: a**2*funct(lat, lon)
     
     lat1, lat2 = 0, dlat
-    lan1, lan2 = 0, 2*pi
+    clon1, clon2 = 0, 2*pi
     
     r = dblquad(func=f, a=lat1, b=lat2, gfun=lambda x: clon1, hfun=lambda x: clon2)
     return r
@@ -110,7 +69,7 @@ def sp_cell_average(a, dlat, dlon, funct):
     f = lambda lat, lon: a**2*funct(lat, lon)
     
     lat1, lat2 = pi-dlat, pi
-    lan1, lan2 = 0, 2*pi
+    clon1, clon2 = 0, 2*pi
     
     r = dblquad(func=f, a=lat1, b=lat2, gfun=lambda x: clon1, hfun=lambda x: clon2)
     return r
@@ -121,27 +80,6 @@ def staggereduv_to_centeruv(U, V):
     u[:,-1]  = 0.5*( U[:,-1]  + U[:,0]  )
     v = 0.5*(V[:-1,:] + V[1:,:])
     return u, v
-
-def wind_interpolate_spline(lats, lons, u, v, I, J):
-    from scipy.interpolate import RectSphereBivariateSpline
-    ilats, ilons = calc_grid_coords(nlats=J, nlons=I, return_grid=True)
-
-    u_sp = RectSphereBivariateSpline(lats, lons, u)
-    v_sp = RectSphereBivariateSpline(lats, lons, v)
-
-    iu = u_sp.ev(ilats, ilons)
-    iv = v_sp.ev(ilats, ilons)
-    return iu, iv 
-
-
-def wind2d_to_wind3d(lats, lons, u, v, a):
-    x, y, z = latlon_to_xyz(lats, lons, a)
-    
-    vx = -u*np.sin(lons) + v*np.cos(lats)*np.cos(lons)
-    vy =  u*np.cos(lons) + v*np.cos(lats)*np.sin(lons)
-    vz = -v*np.sin(lats)
-       
-    return x.flatten(), y.flatten(), z.flatten(), vx.flatten(), vy.flatten(), vz.flatten()
 
 def dt_from_cfl_cond(I, J, a, max_vel, lat_th=None):
     dlat = pi/(J+1)
@@ -196,6 +134,14 @@ def get_divergence(u, v, a=1.0):
     data[KeySouthPole] = -(a*dlon*sin(0.5*dlat)*v[-1,:]).sum()    
     return data
 
+def wind2d_to_wind3d(lats, lons, u, v, a):
+    x, y, z = latlon_to_xyz(lats, lons, a)
+    
+    vx = -u*np.sin(lons) + v*np.cos(lats)*np.cos(lons)
+    vy =  u*np.cos(lons) + v*np.cos(lats)*np.sin(lons)
+    vz = -v*np.sin(lats)
+       
+    return x.flatten(), y.flatten(), z.flatten(), vx.flatten(), vy.flatten(), vz.flatten()
 
 
 def sol_diff(sol1, sol2, a=1.0):
@@ -235,20 +181,6 @@ def calc_mass(sol, a=1.0):
     return (area_non_pole*sol[KeyData]).sum() + (sol[KeyNorthPole] + sol[KeySouthPole])*area_pole    
 
 def calc_l2(sol, a=1.0):    
-    """
-    Parameters
-    ----------
-    sol : TYPE
-        DESCRIPTION.
-    a : TYPE, optional
-        DESCRIPTION. The default is 1.0.
-
-    Returns
-    -------
-    TYPE
-        DESCRIPTION.
-
-    """
     from .core import KeyNorthPole, KeySouthPole, KeyData 
     J, I = sol[KeyData].shape 
     dlat, dlon = get_dlat_dlon(I=I,J=J)

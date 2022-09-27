@@ -4,7 +4,7 @@ from AdvDiffPyTools.calc import calc_grid_coords
 import  numpy as np 
 
 def save_all(out_folder, phi=None, ff=None, sigma=None, mulon=None, mulat=None, u=None, v=None, layout="F", 
-             custom_names={"phi":"phi", "ff":"ff", "sigma":"sigma", "mulon":"mulon", "mulat":"mulat", "u":"u", "v":"v"} ):
+             custom_names={"phi":"phi", "ff":"ff", "sigma":"sigma", "mulon":"mulon", "mulat":"mulat"} ):
     from os.path import join
     if phi   :
         oname="phi"
@@ -26,14 +26,6 @@ def save_all(out_folder, phi=None, ff=None, sigma=None, mulon=None, mulat=None, 
         oname="mulat"
         if oname in custom_names.keys(): oname = custom_names[oname] 
         save_bin_file(join(out_folder, oname), mulat, layout=layout)    
-    if u     : 
-        oname="u"
-        if oname in custom_names.keys(): oname = custom_names[oname] 
-        save_bin_file(join(out_folder, oname), u, layout=layout)
-    if v     : 
-        oname="v"
-        if oname in custom_names.keys(): oname = custom_names[oname] 
-        save_bin_file(join(out_folder, oname), v, layout=layout)
     
 def empty_problem(I, J):
     lats, lons = calc_grid_coords(nlats=J,  nlons=I, return_grid=True)    
@@ -43,13 +35,11 @@ def empty_problem(I, J):
 
     shape = (J,I)
     vshape = (J+1,I)
-    u = np.zeros(shape); u = {KeyData: u}
-    v = np.zeros(vshape); v = {KeyData: v}
     
     mu_lon = np.zeros(shape); mu_lon = {KeyData: mu_lon}
     mu_lat = np.zeros(vshape); mu_lat = {KeyData: mu_lat}
         
-    return lats, lons, phi, fff, sigma, mu_lon, mu_lat, u, v 
+    return lats, lons, phi, fff, sigma, mu_lon, mu_lat
 
 class GenNamelist:
     def __init__(self, GS : bool = False) -> None:
@@ -82,10 +72,14 @@ class GenNamelist:
 
     def set(self, key, value):
         if key not in self.keys:
-            raise("Unknow key = "+key)
+            raise Exception("Unknow key = "+key)
         
+        if isinstance(value, bool):
+            value = '.true.' if value else '.false.'
+
         if key in ("phi0_path", "ff0_path", "sigma0_path", "mulon0_path", "mulat0_path", "output_folder"):
             value = "\"{}\"".format(value)
+
         self.data[key]=value        
 
     def gen_namelist(self):

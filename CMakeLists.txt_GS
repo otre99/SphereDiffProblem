@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
-project (diff.exe)
+project (diff_gs.exe)
 enable_language (Fortran)
 
 SET(EXP "user_code" CACHE STRING "User specified experiment")
@@ -23,7 +23,7 @@ SET(SRC src/diff_types.f90
         src/diff_io.f90
         src/diff_cn_dim_split.f90
         src/diff_solver.f90
-        src/diff_user.f90
+        src/diff_user_gs.f90
         )
 
 add_executable(${PROJECT_NAME} ${SRC})

@@ -251,9 +251,6 @@ def read_bin_output_limited(fname):
     r[KeyData] =   data[3:].reshape(rows, cols)  
     return r
 
-
-
-
 def get_info(output_folder, a=1.0):
     r={}
 

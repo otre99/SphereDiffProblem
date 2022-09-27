@@ -11,3 +11,9 @@ Model for solving the linear diffusion equation over sphere surface
     - Crank Nicolson squeme (Unconditionally stable)
     - Implicit (no  iterations required)
     - L2 norm conservative
+
+### Gallery
+
+Some Gray-Scott patterns
+![](./assets/gs.jpg)
+
