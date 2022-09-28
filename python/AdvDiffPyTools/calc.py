@@ -16,6 +16,21 @@ def calc_grid_coords(nlats:int, nlons:int, return_grid=False, geo_latlon=False):
         lons[ lons < 0.0 ] += 360.0
     return lats, lons 
 
+def calc_grid_coords_u(nlats:int, nlons:int, return_grid=False, geo_latlon=False):
+    lats, lons = calc_grid_coords(nlats=nlats, nlons=nlons, return_grid=return_grid, geo_latlon=geo_latlon)
+    return lats, lons-lons[0,0]
+
+def calc_grid_coords_v(nlats:int, nlons:int, return_grid=False, geo_latlon=False):
+    lats, lons = calc_grid_coords(nlats=nlats, nlons=nlons, return_grid=return_grid, geo_latlon=geo_latlon)
+   
+    dlat = 0.5*lats[0,0]
+    lats -= dlat
+    line = np.empty(shape=(1, lats.shape[1]), dtype=lats.dtype)
+    line[...] = np.pi-dlat
+    lats = np.concatenate([lats, line], axis=0)
+    lons = np.concatenate([lons, lons[:1,:]], axis=0)
+    return lats, lons
+
 def calc_cell_area(lat, dlat, dlon, a=1.0):
     return np.sin(lat)*dlat*dlon*a**2
 
@@ -63,7 +78,6 @@ def np_cell_average(a, dlat, dlon, funct):
     r = dblquad(func=f, a=lat1, b=lat2, gfun=lambda x: clon1, hfun=lambda x: clon2)
     return r
 
-
 def sp_cell_average(a, dlat, dlon, funct):
     from scipy.integrate import dblquad
     f = lambda lat, lon: a**2*funct(lat, lon)
@@ -108,8 +122,6 @@ def gauss_spot(lats, lons, a, center_pt, C, F, kexp=2.0):
     sol_s = C*exp( -abs(F*sol_s**kexp) )
     return sol_n, s, sol_s
 
-
-
 def get_divergence(u, v, a=1.0):
     from .core import KeyNorthPole, KeySouthPole, KeyData 
     from math import sin, cos   
@@ -143,7 +155,6 @@ def wind2d_to_wind3d(lats, lons, u, v, a):
        
     return x.flatten(), y.flatten(), z.flatten(), vx.flatten(), vy.flatten(), vz.flatten()
 
-
 def sol_diff(sol1, sol2, a=1.0):
     from .core import KeyNorthPole, KeySouthPole, KeyData 
     diff_npole = sol1[KeyNorthPole]-sol2[KeyNorthPole]    
@@ -167,8 +178,7 @@ def sol_diff_l2norm(sol1, sol2, a=1.0):
 
     D = sol_diff(sol1, sol2, a=a)
     return (area_non_pole*D[KeyData]**2).sum() + (D[KeyNorthPole]**2 + D[KeySouthPole]**2)*area_pole
-    
-    
+       
 def calc_mass(sol, a=1.0):    
     from .core import KeyNorthPole, KeySouthPole, KeyData 
     J, I = sol[KeyData].shape 

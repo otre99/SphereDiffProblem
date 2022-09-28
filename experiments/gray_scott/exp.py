@@ -65,8 +65,8 @@ if __name__ == "__main__":
 
 
     name_lst = GenNamelist(GS=True)
-    name_lst.set("nlats", 719)
-    name_lst.set("nlons", 1440)
+    name_lst.set("nlats", J)
+    name_lst.set("nlons", I)
     name_lst.set("n_species", 2)
     name_lst.set("nsave", 1000)
     name_lst.set("dt", dt)

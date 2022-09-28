@@ -1,9 +1,6 @@
 module diff_user
 use diff_types
 
-
-real(dp) :: fparam, kparam 
-
 contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -78,30 +75,22 @@ subroutine update_ffsigma(sp, iter, tt)
     integer(i4b) :: k, nlats, nlons, nspecies 
 
     nspecies = size(sp)
-    nlats = size(sp(1)%phi,1)
-    nlons = size(sp(1)%phi,2)
 
-    sp(1)%sigma_np = fparam + sp(2)%phi_np**2
-    sp(1)%ff_np = fparam 
-
-    sp(2)%sigma_np = fparam + kparam
-    sp(2)%ff_np = sp(1)%phi_np*sp(2)%phi_np**2 
+    !! update north pole 
+    !sp(1)%sigma_np = 
+    !sp(1)%ff_np =   
     
     !$omp parallel do  
     do k=1, nlons    
-        sp(1)%sigma(:,k) = fparam + sp(2)%phi(:,k)**2 
-        sp(1)%ff(:,k) = fparam
-
-        sp(2)%sigma(:,k) = fparam +  kparam
-        sp(2)%ff(:,k) = sp(1)%phi(:,k)*sp(2)%phi(:,k)**2 
+        !sp(1)%sigma(:,k) =  
+        !sp(1)%ff(:,k) = 
     end do        
     !$omp end parallel do    
-      
-    sp(1)%sigma_sp = fparam + sp(2)%phi_sp**2 
-    sp(1)%ff_sp = fparam 
+
+    !! update south pole       
+    !sp(1)%sigma_sp =  
+    !sp(1)%ff_sp = 
    
-    sp(2)%sigma_sp = fparam + kparam 
-    sp(2)%ff_sp = sp(1)%phi_sp*sp(2)%phi_sp**2 
 
 end subroutine update_ffsigma
 
@@ -112,12 +101,9 @@ subroutine dpdt(tt, lat, lon, ff, sigma, sp_in, sp_out)
     real(dp), intent(in) :: tt, lat, lon 
    
     integer(i4b) :: nspecies 
-
     nspecies = size(sp_in,1)
-      
-    sp_out(1) = -sp_in(1)*sp_in(2)**2+fparam*(1-sp_in(1))
-    sp_out(2) =  sp_in(1)*sp_in(2)**2-(fparam+kparam)*sp_in(2)
 
+    sp_out = ff-sigma*sp_in    
 end subroutine dpdt
 
 
